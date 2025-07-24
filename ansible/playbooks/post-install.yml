@@ -1,0 +1,122 @@
+---
+- name: Post-installation AAP Configuration
+  hosts: controller
+  become: yes
+  vars:
+    admin_password: "admin123"
+    
+  tasks:
+    - name: Wait for AAP Controller to be ready
+      uri:
+        url: "https://{{ ansible_host }}/api/v2/ping/"
+        method: GET
+        validate_certs: no
+        status_code: 200
+      register: controller_ready
+      until: controller_ready.status == 200
+      retries: 30
+      delay: 10
+    
+    - name: Create admin token
+      uri:
+        url: "https://{{ ansible_host }}/api/v2/tokens/"
+        method: POST
+        user: admin
+        password: "{{ admin_password }}"
+        body_format: json
+        body:
+          description: "API Token for automation"
+          scope: "write"
+        validate_certs: no
+        status_code: 201
+      register: token_result
+    
+    - name: Save token to file
+      copy:
+        content: "{{ token_result.json.token }}"
+        dest: "/tmp/aap_token"
+        mode: '0600'
+    
+    - name: Create demo organization
+      uri:
+        url: "https://{{ ansible_host }}/api/v2/organizations/"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ token_result.json.token }}"
+        body_format: json
+        body:
+          name: "Demo Organization"
+          description: "Demo organization for testing"
+        validate_certs: no
+        status_code: [201, 400]
+      register: org_result
+    
+    - name: Create demo project
+      uri:
+        url: "https://{{ ansible_host }}/api/v2/projects/"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ token_result.json.token }}"
+        body_format: json
+        body:
+          name: "Demo Project"
+          description: "Demo project for testing"
+          organization: "{{ org_result.json.id | default(1) }}"
+          scm_type: "git"
+          scm_url: "https://github.com/ansible/ansible-examples.git"
+        validate_certs: no
+        status_code: [201, 400]
+      register: project_result
+    
+    - name: Create demo inventory
+      uri:
+        url: "https://{{ ansible_host }}/api/v2/inventories/"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ token_result.json.token }}"
+        body_format: json
+        body:
+          name: "Demo Inventory"
+          description: "Demo inventory for testing"
+          organization: "{{ org_result.json.id | default(1) }}"
+        validate_certs: no
+        status_code: [201, 400]
+      register: inventory_result
+    
+    - name: Add localhost to inventory
+      uri:
+        url: "https://{{ ansible_host }}/api/v2/hosts/"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ token_result.json.token }}"
+        body_format: json
+        body:
+          name: "localhost"
+          inventory: "{{ inventory_result.json.id | default(1) }}"
+          variables: "ansible_connection: local"
+        validate_certs: no
+        status_code: [201, 400]
+    
+    - name: Create demo job template
+      uri:
+        url: "https://{{ ansible_host }}/api/v2/job_templates/"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ token_result.json.token }}"
+        body_format: json
+        body:
+          name: "Demo Job Template"
+          description: "Demo job template for testing"
+          project: "{{ project_result.json.id | default(1) }}"
+          inventory: "{{ inventory_result.json.id | default(1) }}"
+          playbook: "lamp_simple/site.yml"
+          job_type: "run"
+        validate_certs: no
+        status_code: [201, 400]
+      register: job_template_result
+    
+    - name: Save job template ID
+      copy:
+        content: "{{ job_template_result.json.id | default(1) }}"
+        dest: "/tmp/demo_job_template_id"
+        mode: '0600'

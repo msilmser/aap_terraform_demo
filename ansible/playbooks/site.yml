@@ -1,0 +1,137 @@
+---
+- name: Configure AAP Infrastructure
+  hosts: all
+  become: yes
+  gather_facts: yes
+  
+  tasks:
+    - name: Update system packages
+      yum:
+        name: "*"
+        state: latest
+        update_cache: yes
+    
+    - name: Install required packages
+      yum:
+        name:
+          - epel-release
+          - python3
+          - python3-pip
+          - git
+          - curl
+          - wget
+          - vim
+          - net-tools
+          - rsync
+        state: present
+    
+    - name: Configure firewall
+      firewalld:
+        service: "{{ item }}"
+        permanent: yes
+        state: enabled
+        immediate: yes
+      loop:
+        - ssh
+        - https
+        - http
+    
+    - name: Set timezone
+      timezone:
+        name: America/New_York
+
+- name: Configure Database Server
+  hosts: database
+  become: yes
+  
+  tasks:
+    - name: Install PostgreSQL
+      yum:
+        name:
+          - postgresql-server
+          - postgresql-contrib
+          - python3-psycopg2
+        state: present
+    
+    - name: Initialize PostgreSQL database
+      postgresql_db:
+        name: template1
+        state: present
+      become_user: postgres
+      ignore_errors: yes
+    
+    - name: Start and enable PostgreSQL
+      systemd:
+        name: postgresql
+        state: started
+        enabled: yes
+    
+    - name: Configure PostgreSQL for AAP
+      postgresql_user:
+        name: awx
+        password: awxpass
+        priv: ALL
+        state: present
+      become_user: postgres
+    
+    - name: Create AAP databases
+      postgresql_db:
+        name: "{{ item }}"
+        owner: awx
+        state: present
+      become_user: postgres
+      loop:
+        - awx
+        - pulp
+    
+    - name: Configure pg_hba.conf
+      lineinfile:
+        path: /var/lib/pgsql/data/pg_hba.conf
+        line: "host    all             all             192.168.100.0/24        md5"
+        insertafter: "# IPv4 local connections:"
+      notify: restart postgresql
+    
+    - name: Configure postgresql.conf
+      lineinfile:
+        path: /var/lib/pgsql/data/postgresql.conf
+        regexp: "^#?listen_addresses"
+        line: "listen_addresses = '*'"
+      notify: restart postgresql
+    
+    - name: Open PostgreSQL port
+      firewalld:
+        port: 5432/tcp
+        permanent: yes
+        state: enabled
+        immediate: yes
+  
+  handlers:
+    - name: restart postgresql
+      systemd:
+        name: postgresql
+        state: restarted
+
+- name: Configure Controller and Hub
+  hosts: controller:hub
+  become: yes
+  
+  tasks:
+    - name: Install subscription-manager
+      yum:
+        name: subscription-manager
+        state: present
+    
+    - name: Create AAP user
+      user:
+        name: awx
+        system: yes
+        shell: /bin/bash
+        home: /var/lib/awx
+        create_home: yes
+    
+    - name: Install Python dependencies
+      pip:
+        name:
+          - requests
+          - urllib3
+        executable: pip3

@@ -1,0 +1,47 @@
+#cloud-config
+hostname: ${hostname}
+fqdn: ${hostname}.aap.local
+manage_etc_hosts: true
+
+users:
+  - default
+  - name: ansible
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCdQBI3l/SI5Y7QjWoFl5525iAG4w8kniXVL5nK6JfkFW4ahYOO3rvuK6x/iWNLtEpVmrCMQ0xkPtNAWCmyxYb3AJrMQesDnnxAszzAaJ4hvWCi+L5xP3GNS7CvlQPV5eZlZfTINlnGNkaf+CYa88euxNP4SXQ8oISgi2c4imi5WGdp8ZHLxfBqRnVwhgB/6GvWVfZ/qPtEgjaPhXH3FgYpjR1qE0VPFz+CU7hol20ZBX5YGivyo5XacX5W9tte+pkGdNlFT6848q9594L8b4Zc82ozLCPlooDgxX4Di2nxtX1SUDIkK2ygDa873RZpo5DEHx7+3tlHwxDJsy8P5h4tG1I8SYzoTCUlQULvVPdykZDduci7I6KQzPogxFuiGRsvwvCDYJyH4yznZ4FsjWxWKm9hEKIn6aCwZnT8BIyNyudKcz3FWPxUO4ur2Y/v7ObWeBehcVF/NLRYBbcRF62OZAgHunycnJHTr5AdDMskbrANi0AkE0XG4ZAdQ+ONaas= msilmser@PC-NZXT
+
+packages:
+  - python3
+  - python3-pip
+  - git
+  - curl
+  - wget
+  - vim
+  - net-tools
+
+runcmd:
+  - systemctl enable --now sshd
+  - firewall-cmd --permanent --add-service=ssh
+  - firewall-cmd --permanent --add-service=https
+  - firewall-cmd --permanent --add-port=443/tcp
+  - firewall-cmd --permanent --add-port=80/tcp
+  - firewall-cmd --reload
+  - echo "192.168.100.10 aap-controller aap-controller.aap.local" >> /etc/hosts
+  - echo "192.168.100.11 aap-hub aap-hub.aap.local" >> /etc/hosts
+  - echo "192.168.100.12 aap-database aap-database.aap.local" >> /etc/hosts
+
+write_files:
+  - path: /etc/systemd/resolved.conf
+    content: |
+      [Resolve]
+      DNS=192.168.100.1
+      Domains=aap.local
+    append: false
+  - path: /home/ansible/.ssh/config
+    content: |
+      Host *
+          StrictHostKeyChecking no
+          UserKnownHostsFile /dev/null
+    owner: ansible:ansible
+    permissions: '0600'
