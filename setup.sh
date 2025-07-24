@@ -258,14 +258,24 @@ configure_firewall() {
     print_success "Firewall configured"
 }
 
-# Create libvirt storage directory
+# Create libvirt storage directory and pool
 create_storage() {
-    print_step "Creating libvirt storage directory"
+    print_step "Creating libvirt storage directory and pool"
     
     mkdir -p /var/lib/libvirt/images/aap
     chown -R qemu:qemu /var/lib/libvirt/images/aap
     
-    print_success "Storage directory created"
+    # Create the storage pool if it doesn't exist
+    if ! virsh pool-info aap-pool >/dev/null 2>&1; then
+        virsh pool-define-as aap-pool dir --target /var/lib/libvirt/images/aap
+        virsh pool-start aap-pool
+        virsh pool-autostart aap-pool
+        print_success "Storage pool 'aap-pool' created and started"
+    else
+        print_info "Storage pool 'aap-pool' already exists"
+    fi
+    
+    print_success "Storage directory and pool configured"
 }
 
 # Initialize Terraform
