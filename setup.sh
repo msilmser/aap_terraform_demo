@@ -285,6 +285,13 @@ init_terraform() {
     if [ -d "$INITIAL_DIR/terraform" ]; then
         cd "$INITIAL_DIR/terraform"
         sudo -u "$ACTUAL_USER" terraform init
+        
+        # Fix provider permissions after initialization
+        if [ -d ".terraform/providers" ]; then
+            find .terraform/providers -name "terraform-provider-*" -type f -exec chmod +x {} \;
+            print_success "Terraform provider permissions fixed"
+        fi
+        
         print_success "Terraform initialized"
     else
         print_error "Terraform directory not found at $INITIAL_DIR/terraform"
