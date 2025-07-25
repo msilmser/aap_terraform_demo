@@ -40,20 +40,20 @@ resource "libvirt_network" "aap_network" {
   domain    = "aap.local"
   addresses = ["192.168.100.0/24"]
   autostart = true
-  
+
   dhcp {
     enabled = true
   }
-  
+
   dns {
-    enabled = true
+    enabled    = true
     local_only = false
   }
 }
 
 resource "libvirt_cloudinit_disk" "controller_init" {
-  name      = "controller-init.iso"
-  pool      = libvirt_pool.default.name
+  name = "controller-init.iso"
+  pool = "aap-pool"
   user_data = templatefile("${path.module}/cloud-init/controller-user-data.yaml", {
     hostname = "aap-controller"
   })
@@ -61,8 +61,8 @@ resource "libvirt_cloudinit_disk" "controller_init" {
 }
 
 resource "libvirt_cloudinit_disk" "hub_init" {
-  name      = "hub-init.iso"
-  pool      = libvirt_pool.default.name
+  name = "hub-init.iso"
+  pool = "aap-pool"
   user_data = templatefile("${path.module}/cloud-init/hub-user-data.yaml", {
     hostname = "aap-hub"
   })
@@ -70,8 +70,8 @@ resource "libvirt_cloudinit_disk" "hub_init" {
 }
 
 resource "libvirt_cloudinit_disk" "database_init" {
-  name      = "database-init.iso"
-  pool      = libvirt_pool.default.name
+  name = "database-init.iso"
+  pool = "aap-pool"
   user_data = templatefile("${path.module}/cloud-init/database-user-data.yaml", {
     hostname = "aap-database"
   })
