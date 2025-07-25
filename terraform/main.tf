@@ -11,28 +11,25 @@ provider "libvirt" {
   uri = "qemu:///system"
 }
 
-# Pool created by setup.sh - using data source instead
-data "libvirt_pool" "default" {
-  name = "aap-pool"
-}
+# Pool created by setup.sh - using pool name directly
 
 resource "libvirt_volume" "controller_volume" {
   name   = "aap-controller.qcow2"
-  pool   = data.libvirt_pool.default.name
+  pool   = "aap-pool"
   source = "https://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-x86_64-9-latest.x86_64.qcow2"
   format = "qcow2"
 }
 
 resource "libvirt_volume" "hub_volume" {
   name   = "aap-hub.qcow2"
-  pool   = data.libvirt_pool.default.name
+  pool   = "aap-pool"
   source = "https://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-x86_64-9-latest.x86_64.qcow2"
   format = "qcow2"
 }
 
 resource "libvirt_volume" "database_volume" {
   name   = "aap-database.qcow2"
-  pool   = data.libvirt_pool.default.name
+  pool   = "aap-pool"
   source = "https://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-x86_64-9-latest.x86_64.qcow2"
   format = "qcow2"
 }
