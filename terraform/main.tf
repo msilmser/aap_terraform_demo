@@ -88,8 +88,7 @@ resource "libvirt_domain" "aap_controller" {
   network_interface {
     network_id     = libvirt_network.aap_network.id
     hostname       = "aap-controller"
-    addresses      = ["192.168.100.10"]
-    wait_for_lease = false
+    wait_for_lease = true
   }
 
   disk {
@@ -119,8 +118,7 @@ resource "libvirt_domain" "aap_hub" {
   network_interface {
     network_id     = libvirt_network.aap_network.id
     hostname       = "aap-hub"
-    addresses      = ["192.168.100.11"]
-    wait_for_lease = false
+    wait_for_lease = true
   }
 
   disk {
@@ -150,8 +148,7 @@ resource "libvirt_domain" "aap_database" {
   network_interface {
     network_id     = libvirt_network.aap_network.id
     hostname       = "aap-database"
-    addresses      = ["192.168.100.12"]
-    wait_for_lease = false
+    wait_for_lease = true
   }
 
   disk {
