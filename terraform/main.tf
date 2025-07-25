@@ -86,9 +86,9 @@ resource "libvirt_domain" "aap_controller" {
   cloudinit = libvirt_cloudinit_disk.controller_init.id
 
   network_interface {
-    network_id     = libvirt_network.aap_network.id
+    network_name   = "default"
     hostname       = "aap-controller"
-    wait_for_lease = true
+    wait_for_lease = false
   }
 
   disk {
@@ -116,9 +116,9 @@ resource "libvirt_domain" "aap_hub" {
   cloudinit = libvirt_cloudinit_disk.hub_init.id
 
   network_interface {
-    network_id     = libvirt_network.aap_network.id
+    network_name   = "default"
     hostname       = "aap-hub"
-    wait_for_lease = true
+    wait_for_lease = false
   }
 
   disk {
@@ -146,9 +146,9 @@ resource "libvirt_domain" "aap_database" {
   cloudinit = libvirt_cloudinit_disk.database_init.id
 
   network_interface {
-    network_id     = libvirt_network.aap_network.id
+    network_name   = "default"
     hostname       = "aap-database"
-    wait_for_lease = true
+    wait_for_lease = false
   }
 
   disk {
