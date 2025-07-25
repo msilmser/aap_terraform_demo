@@ -1,5 +1,5 @@
 version: 2
 ethernets:
   eth0:
-    dhcp4: true
+    dhcp4: false
     dhcp6: false
